@@ -6,6 +6,7 @@
 
 #include "Material.h"
 #include "BaseNameInterface.h"
+#include "ADRankTwoTensorForward.h"
 
 class CrackSurfaceDensity : public Material, public BaseNameInterface
 {
@@ -28,6 +29,9 @@ protected:
 
   /// Crack geometric function
   const ADMaterialProperty<Real> & _alpha;
+
+  /// Optional fracture-anisotropy tensor
+  const ADMaterialProperty<RankTwoTensor> * _anisotropy_tensor;
 
   /// The crack surface density
   ADMaterialProperty<Real> & _gamma;

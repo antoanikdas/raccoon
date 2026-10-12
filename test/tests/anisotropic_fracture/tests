@@ -1,0 +1,32 @@
+[Tests]
+  [euler_rotation]
+    type = CSVDiff
+    input = manufactured_euler.i
+    cli_args = 'Outputs/file_base=manufactured_out'
+    csvdiff = manufactured_out.csv
+    prereq = 'manufactured_solution'
+    requirement = 'The fracture-anisotropy material shall rotate a material direction using all three passive Bunge Euler angles consistently with the elasticity tensor.'
+  []
+  [manufactured_solution]
+    type = CSVDiff
+    input = manufactured.i
+    csvdiff = manufactured_out.csv
+    requirement = 'RACCOON shall solve a phase-field diffusion problem with a constant transverse fracture-anisotropy tensor.'
+  []
+  [jacobian]
+    type = PetscJacobianTester
+    input = manufactured.i
+    cli_args = 'Outputs/csv=false'
+    ratio_tol = 1e-8
+    difference_tol = 1e-6
+    run_sim = true
+    requirement = 'The anisotropic phase-field diffusion kernel shall provide an accurate automatic-differentiation Jacobian.'
+  []
+  [zero_direction]
+    type = RunException
+    input = manufactured.i
+    cli_args = 'Materials/fracture_anisotropy/direction="0 0 0"'
+    expect_err = 'The fracture-anisotropy direction must be nonzero.'
+    requirement = 'The fracture-anisotropy material shall reject a zero material direction.'
+  []
+[]

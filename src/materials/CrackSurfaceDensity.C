@@ -13,8 +13,9 @@ CrackSurfaceDensity::validParams()
   params += BaseNameInterface::validParams();
   params.addClassDescription(
       "This class computes the crack surface density $\\gamma = \\dfrac{1}{c_0 l} (\\alpha + l^2 "
-      "\\grad d \\cdot \\grad d)$, where $\\alpha$ is the crack geometric function, $c_0$ is the "
-      "normalization constant, and $l$ is the phase-field regularization length.");
+      "\\grad d \\cdot \\mathbf{A} \\grad d)$, where $\\alpha$ is the crack geometric function, "
+      "$c_0$ is the normalization constant, $l$ is the phase-field regularization length, and "
+      "$\\mathbf{A}$ defaults to the identity tensor.");
 
   params.addRequiredCoupledVar("phase_field", "The phase-field variable");
   params.addParam<MaterialPropertyName>(
@@ -23,6 +24,8 @@ CrackSurfaceDensity::validParams()
       "regularization_length", "l", "The phase-field regularization length");
   params.addParam<MaterialPropertyName>(
       "crack_geometric_function", "alpha", "The crack geometric function");
+  params.addParam<MaterialPropertyName>("anisotropy_tensor",
+                                        "Optional fracture-anisotropy tensor $\\mathbf{A}$");
   params.addParam<MaterialPropertyName>(
       "crack_surface_density", "gamma", "Name of the crack surface density");
 
@@ -36,6 +39,10 @@ CrackSurfaceDensity::CrackSurfaceDensity(const InputParameters & parameters)
     _c0(getADMaterialProperty<Real>(prependBaseName("normalization_constant", true))),
     _l(getADMaterialProperty<Real>(prependBaseName("regularization_length", true))),
     _alpha(getADMaterialProperty<Real>(prependBaseName("crack_geometric_function", true))),
+    _anisotropy_tensor(
+        isParamValid("anisotropy_tensor")
+            ? &getADMaterialProperty<RankTwoTensor>(prependBaseName("anisotropy_tensor", true))
+            : nullptr),
     _gamma(declareADProperty<Real>(prependBaseName("crack_surface_density", true)))
 {
 }
@@ -43,6 +50,8 @@ CrackSurfaceDensity::CrackSurfaceDensity(const InputParameters & parameters)
 void
 CrackSurfaceDensity::computeQpProperties()
 {
-  _gamma[_qp] =
-      (_alpha[_qp] + _l[_qp] * _l[_qp] * _grad_d[_qp] * _grad_d[_qp]) / _c0[_qp] / _l[_qp];
+  const ADReal gradient_density = _anisotropy_tensor
+                                      ? _grad_d[_qp] * ((*_anisotropy_tensor)[_qp] * _grad_d[_qp])
+                                      : _grad_d[_qp] * _grad_d[_qp];
+  _gamma[_qp] = (_alpha[_qp] + _l[_qp] * _l[_qp] * gradient_density) / _c0[_qp] / _l[_qp];
 }
